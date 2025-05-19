@@ -39,6 +39,7 @@ namespace client
                             string formatedNickname = $"Username: {nickname}";
                             await SendMessage(socket, formatedNickname);
                             Console.WriteLine("Username sended");  
+                            await ReceiveMessage(socket);
                     }
                     var command = Console.ReadLine().ToLower();
 
@@ -98,11 +99,18 @@ namespace client
         {
             byte[] data = new byte[1024];
             data = Encoding.UTF8.GetBytes(message);
-
-            
             ArraySegment<byte> bytes = new ArraySegment<byte>(data);
             await socket.SendAsync(bytes, SocketFlags.None);
 
+        }
+
+        static async Task ReceiveMessage(Socket socket)
+        {
+            byte[] data = new byte[1024];
+            ArraySegment<byte> bytes = new ArraySegment<byte>(data);
+            int bytesRec = await socket.ReceiveAsync(bytes, SocketFlags.None);
+            string messageReceived = Encoding.UTF8.GetString(data, 0, bytesRec);
+            Console.WriteLine($"This is your data: {messageReceived}");
         }
     }
 }

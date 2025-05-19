@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Configuration;
 using System.Linq;
 using System.Net;
 using System.Net.Sockets;
@@ -13,9 +14,10 @@ namespace server
     { 
         static async Task Main(string[] args)
         {
-
-            var hostName = Dns.GetHostName();
-            IPHostEntry localhost = await Dns.GetHostEntryAsync(hostName);
+            Dictionary<string, Object> users = new Dictionary<string, Object>();
+            int PlayersCount = 0;
+            
+            string hostName = Dns.GetHostName();
             IPAddress localIpAddress = IPAddress.Any;
             IPEndPoint ipEndPoint = new IPEndPoint(localIpAddress, 11000);
 
@@ -25,10 +27,11 @@ namespace server
                 ProtocolType.Tcp
                );
 
+            
             listener.Bind(ipEndPoint);
             listener.Listen(100);
 
-            System.Net.IPAddress [] ips = new System.Net.IPAddress[7];
+            System.Net.IPAddress [] ips = new System.Net.IPAddress[Dns.GetHostAddresses(hostName).Length];
 
             Console.WriteLine($"The server is listening on this ip's :");
             for (var a = 0; a < Dns.GetHostAddresses(hostName).Length; a++)
@@ -37,17 +40,31 @@ namespace server
                 ips[a] = Dns.GetHostAddresses(hostName)[a];
             }
             Console.WriteLine($"The server is listening on this port : {ipEndPoint.Port}");
-
+            Console.WriteLine($"The server is listening on this host name : {hostName}");
 
             while (true)
             {
                 var handler = await listener.AcceptAsync();
-                _ = UserHandler(handler);
-                Console.WriteLine($"User connected {handler.RemoteEndPoint}");
+                if (PlayersCount < 3)
+                {
+                PlayersCount++;
+
+                Console.WriteLine($"Connected players: {PlayersCount}");
+                    _ = UserHandler(handler, users);
+                    Console.WriteLine($"User connected {handler.RemoteEndPoint}");
+
+                }
+                else
+                {
+                    Console.WriteLine("The server is full");
+                    handler.Close();
+                }
+
+
             }
         }
                 
-                static async Task UserHandler(Socket handler)
+                static async Task<Socket> UserHandler(Socket handler, Dictionary<string, object> users)
                 {
                     bool nicknameSet = false;
                     string nickName = string.Empty;
@@ -60,12 +77,29 @@ namespace server
                         int received = await handler.ReceiveAsync(segment, SocketFlags.None);
                         var response = Encoding.UTF8.GetString(buffer, 0, received);
 
-                    if (response.StartsWith("Username:") && nicknameSet == false)
+                if (response.StartsWith("Username:"))
                     {
                         nickName = response.Substring(response.IndexOf(":") + 1);
-                        Console.WriteLine($"{nickName} joined the server");
+                        Console.WriteLine($"{nickName} has joined the server");
                         nicknameSet = true;
+
+                        string sessionId = Guid.NewGuid().ToString();
+                        users[sessionId] = new
+                        {
+                            SessionId = sessionId,
+                            Nickname = nickName,
+                            Socket = handler.RemoteEndPoint,
+                            Connected = true,
+                        };
+
+                    await SendMessage(handler, users[sessionId].ToString());
+
+                    foreach (var test in users)
+                    {
+                        Console.WriteLine($"User: {test.Value.ToString()}");
+                        users.Count();
                     }
+                }
 
                     if (response.StartsWith("Message:"))
                     {
@@ -73,15 +107,26 @@ namespace server
                         Console.WriteLine($"{nickName}: {message}");
                     }
 
-                    if (received == 0 && nicknameSet == true)
-                    {
-                        Console.WriteLine($"{nickName} disconnected");
-                    }
+                    //if (response == "" && nicknameSet == true)
+                    //{
+                        
+                    //    Console.WriteLine($"{nickName} disconnected");
+                    //}
 
                 }
 
+                    return handler;
+
 
         }
-            
+
+        static async Task SendMessage(Socket socket, string message)
+        {
+            byte[] data = new byte[1024];
+            data = Encoding.UTF8.GetBytes(message);
+            ArraySegment<byte> bytes = new ArraySegment<byte>(data);
+            await socket.SendAsync(bytes, SocketFlags.None);
+        }
+
     }
 }
