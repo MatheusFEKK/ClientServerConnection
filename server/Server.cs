@@ -11,12 +11,12 @@ using System.Xml.Schema;
 namespace server
 {
     internal class Server
-    { 
+    {
         static async Task Main(string[] args)
         {
             Dictionary<string, Object> users = new Dictionary<string, Object>();
             int PlayersCount = 0;
-            
+
             string hostName = Dns.GetHostName();
             IPAddress localIpAddress = IPAddress.Any;
             IPEndPoint ipEndPoint = new IPEndPoint(localIpAddress, 11000);
@@ -27,11 +27,11 @@ namespace server
                 ProtocolType.Tcp
                );
 
-            
+
             listener.Bind(ipEndPoint);
             listener.Listen(100);
 
-            System.Net.IPAddress [] ips = new System.Net.IPAddress[Dns.GetHostAddresses(hostName).Length];
+            System.Net.IPAddress[] ips = new System.Net.IPAddress[Dns.GetHostAddresses(hostName).Length];
 
             Console.WriteLine($"The server is listening on this ip's :");
             for (var a = 0; a < Dns.GetHostAddresses(hostName).Length; a++)
@@ -45,11 +45,11 @@ namespace server
             while (true)
             {
                 var handler = await listener.AcceptAsync();
-                if (PlayersCount < 3)
+                if (PlayersCount < 2)
                 {
-                PlayersCount++;
-
-                Console.WriteLine($"Connected players: {PlayersCount}");
+                    PlayersCount++;
+                    Console.WriteLine(users.ToArray().ToString());
+                    Console.WriteLine($"Connected players: {PlayersCount}/2");
                     _ = UserHandler(handler, users);
                     Console.WriteLine($"User connected {handler.RemoteEndPoint}");
 
@@ -63,43 +63,52 @@ namespace server
 
             }
         }
-                
-                static async Task<Socket> UserHandler(Socket handler, Dictionary<string, object> users)
-                {
-                    bool nicknameSet = false;
-                    string nickName = string.Empty;
-                    string message = string.Empty;
-                    byte[] buffer = new byte[1024];
 
-                while (true)
-                {
-                        ArraySegment<byte> segment = new ArraySegment<byte>(buffer);
-                        int received = await handler.ReceiveAsync(segment, SocketFlags.None);
-                        var response = Encoding.UTF8.GetString(buffer, 0, received);
+        static async Task<Socket> UserHandler(Socket handler, Dictionary<string, object> users)
+        {
+            bool nicknameSet = false;
+            string nickName = string.Empty;
+            string message = string.Empty;
+            byte[] buffer = new byte[1024];
+
+            while (true)
+            {
+                ArraySegment<byte> segment = new ArraySegment<byte>(buffer);
+                int received = await handler.ReceiveAsync(segment, SocketFlags.None);
+                var response = Encoding.UTF8.GetString(buffer, 0, received);
 
                 if (response.StartsWith("Username:"))
-                    {
-                        nickName = response.Substring(response.IndexOf(":") + 1);
-                        Console.WriteLine($"{nickName} has joined the server");
-                        nicknameSet = true;
+                {
+                    nickName = response.Substring(response.IndexOf(":") + 1);
+                    Console.WriteLine($"{nickName} has joined the server");
+                    nicknameSet = true;
 
-                        string sessionId = Guid.NewGuid().ToString();
-                        users[sessionId] = new
-                        {
-                            SessionId = sessionId,
-                            Nickname = nickName,
-                            Socket = handler.RemoteEndPoint,
-                            Connected = true,
-                        };
+                    string sessionId = Guid.NewGuid().ToString();
+                    users[sessionId] = new
+                    {
+                        SessionId = sessionId,
+                        Nickname = nickName,
+                        Socket = handler.RemoteEndPoint,
+                        Connected = true,
+                    };
 
                     await SendMessage(handler, users[sessionId].ToString());
 
-                    foreach (var test in users)
+                    if (users[sessionId] != "")
                     {
-                        Console.WriteLine($"User: {test.Value.ToString()}");
+                        Console.WriteLine($"User: {users[sessionId].ToString()}");
                         users.Count();
                     }
-                }
+                    else
+                    {
+                        Console.WriteLine("No users connected");
+
+                        foreach (var test in users)
+                        {
+                            Console.WriteLine($"User: {test.Value.ToString()}");
+                            users.Count();
+                        }
+                    }
 
                     if (response.StartsWith("Message:"))
                     {
@@ -107,26 +116,29 @@ namespace server
                         Console.WriteLine($"{nickName}: {message}");
                     }
 
-                    //if (response == "" && nicknameSet == true)
+                    //if (received == 0 && nicknameSet == true)
                     //{
-                        
+
                     //    Console.WriteLine($"{nickName} disconnected");
                     //}
 
                 }
 
-                    return handler;
+                return handler;
+
+
+            }
 
 
         }
+            static async Task SendMessage(Socket socket, string message)
+            {
+                byte[] data = new byte[1024];
+                data = Encoding.UTF8.GetBytes(message);
+                ArraySegment<byte> bytes = new ArraySegment<byte>(data);
+                await socket.SendAsync(bytes, SocketFlags.None);
 
-        static async Task SendMessage(Socket socket, string message)
-        {
-            byte[] data = new byte[1024];
-            data = Encoding.UTF8.GetBytes(message);
-            ArraySegment<byte> bytes = new ArraySegment<byte>(data);
-            await socket.SendAsync(bytes, SocketFlags.None);
-        }
 
+            }
     }
 }

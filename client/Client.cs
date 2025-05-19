@@ -10,6 +10,8 @@ namespace client
 {
     internal class Client
     {
+        private static string sessionID;
+
         static async Task Main(string[] args)
         {
         string nickname = "";
@@ -39,7 +41,8 @@ namespace client
                             string formatedNickname = $"Username: {nickname}";
                             await SendMessage(socket, formatedNickname);
                             Console.WriteLine("Username sended");  
-                            await ReceiveMessage(socket);
+                            sessionID = await ReceiveUserData(socket);
+                            Console.WriteLine($"Your session id is {sessionID.GetType()}");
                     }
                     var command = Console.ReadLine().ToLower();
 
@@ -56,7 +59,8 @@ namespace client
                         {
                             string templateMSG = $"Message: ";
                             message = Console.ReadLine();
-                            await SendMessage(socket, templateMSG + message);
+                            await SendTheSessionID(socket, sessionID);
+                            await SendDataToServer(socket, templateMSG + message);
                             Console.WriteLine("Message sended");
                             continue;
                         }
@@ -104,13 +108,33 @@ namespace client
 
         }
 
-        static async Task ReceiveMessage(Socket socket)
+        static async Task<String> ReceiveUserData(Socket socket)
         {
             byte[] data = new byte[1024];
             ArraySegment<byte> bytes = new ArraySegment<byte>(data);
             int bytesRec = await socket.ReceiveAsync(bytes, SocketFlags.None);
             string messageReceived = Encoding.UTF8.GetString(data, 0, bytesRec);
-            Console.WriteLine($"This is your data: {messageReceived}");
+            messageReceived.Substring(messageReceived.IndexOf("SessionId") + 2);
+
+            return messageReceived;
+        }
+
+        static async Task SendTheSessionID(Socket socket, string sessionID)
+        {
+            byte[] data = new byte[1024];
+            data = Encoding.UTF8.GetBytes(sessionID);
+            ArraySegment<byte> bytes = new ArraySegment<byte>(data);
+            await socket.SendAsync(bytes, SocketFlags.None);
+        }
+
+        static async Task SendDataToServer(Socket socket, string command)
+        {
+            byte[] data = new byte[1024];
+            data = Encoding.UTF8.GetBytes(command);
+            ArraySegment<byte> bytes = new ArraySegment<byte>(data);
+            await socket.SendAsync(bytes, SocketFlags.None);
+
+
         }
     }
 }
