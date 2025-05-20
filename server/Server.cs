@@ -7,6 +7,7 @@ using System.Net.Sockets;
 using System.Text;
 using System.Threading.Tasks;
 using System.Xml.Schema;
+using Newtonsoft.Json;
 
 namespace server
 {
@@ -48,7 +49,7 @@ namespace server
                 if (PlayersCount < 2)
                 {
                     PlayersCount++;
-                    Console.WriteLine(users.ToArray().ToString());
+                    
                     Console.WriteLine($"Connected players: {PlayersCount}/2");
                     _ = UserHandler(handler, users);
                     Console.WriteLine($"User connected {handler.RemoteEndPoint}");
@@ -76,6 +77,10 @@ namespace server
                 ArraySegment<byte> segment = new ArraySegment<byte>(buffer);
                 int received = await handler.ReceiveAsync(segment, SocketFlags.None);
                 var response = Encoding.UTF8.GetString(buffer, 0, received);
+                Console.WriteLine(response);
+
+               
+
 
                 if (response.StartsWith("Username:"))
                 {
@@ -83,50 +88,43 @@ namespace server
                     Console.WriteLine($"{nickName} has joined the server");
                     nicknameSet = true;
 
+                    Console.WriteLine("Generating the sessionid");
                     string sessionId = Guid.NewGuid().ToString();
-                    users[sessionId] = new
+
+                    Console.WriteLine("Will create the object that handles the user");
+
+                    var user = new
                     {
-                        SessionId = sessionId,
-                        Nickname = nickName,
-                        Socket = handler.RemoteEndPoint,
-                        Connected = true,
+                        AuthId = sessionId,
+                        nickname = nickName,
+                        socket = handler,
+                        connected = true,
                     };
 
-                    await SendMessage(handler, users[sessionId].ToString());
+                    Console.WriteLine("Inserting the user in the list");
+                    users.Add(sessionId, user);
 
-                    if (users[sessionId] != "")
+                    string infoToUser = JsonConvert.SerializeObject(user.AuthId);
+                    Console.WriteLine("Object converted to string");
+
+                    await SendMessage(user.socket, infoToUser);
+                    Console.WriteLine("AuthID sended to the client");
+
+                    if (user.AuthId != "")
                     {
-                        Console.WriteLine($"User: {users[sessionId].ToString()}");
+                        Console.WriteLine($"User: {user.AuthId}");
                         users.Count();
                     }
-                    else
+
+                    dynamic messageReceived = JsonConvert.DeserializeObject(response);
+                    Console.WriteLine("Action of the user received" + messageReceived);
+
+                    if (messageReceived.Command == "sendingMessage")
                     {
-                        Console.WriteLine("No users connected");
-
-                        foreach (var test in users)
-                        {
-                            Console.WriteLine($"User: {test.Value.ToString()}");
-                            users.Count();
-                        }
+                        Console.WriteLine($"A message was received {response.Substring(response.IndexOf("Message"))}");
                     }
-
-                    if (response.StartsWith("Message:"))
-                    {
-                        message = response.Substring(response.IndexOf(":") + 1);
-                        Console.WriteLine($"{nickName}: {message}");
-                    }
-
-                    //if (received == 0 && nicknameSet == true)
-                    //{
-
-                    //    Console.WriteLine($"{nickName} disconnected");
-                    //}
 
                 }
-
-                return handler;
-
-
             }
 
 
@@ -137,8 +135,6 @@ namespace server
                 data = Encoding.UTF8.GetBytes(message);
                 ArraySegment<byte> bytes = new ArraySegment<byte>(data);
                 await socket.SendAsync(bytes, SocketFlags.None);
-
-
             }
     }
 }
