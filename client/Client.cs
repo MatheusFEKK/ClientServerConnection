@@ -98,6 +98,7 @@ namespace client
                             message = Console.ReadLine();
                             var payload = new
                             {
+                                Nickname = nickname,
                                 AuthId = sessionID,
                                 Message = message,
                                 Command = "sendingMessage",

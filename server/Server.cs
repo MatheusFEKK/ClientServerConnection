@@ -45,14 +45,33 @@ namespace server
 
             while (true)
             {
+
                 var handler = await listener.AcceptAsync();
+
+                
+                    _ = UserHandler(handler, users);
+                byte[] data = new byte[1024];
+                ArraySegment<byte> bytes = new ArraySegment<byte>(data);
+                int bytesRec = await handler.ReceiveAsync(bytes, SocketFlags.None);
+                string messageReceived = Encoding.UTF8.GetString(data, 0, bytesRec);
+                   
+                if (messageReceived is object)
+                {
+                    dynamic userData = JsonConvert.DeserializeObject<dynamic>(messageReceived);
+                    if (userData.Command == "sendingMessage")
+                    {
+                        Console.WriteLine($"A message was received from {userData.Nickname} the message is {userData.Message}");
+                    }
+                    Console.WriteLine("object received");   
+                }
+
                 if (PlayersCount < 2)
                 {
                     PlayersCount++;
                     
                     Console.WriteLine($"Connected players: {PlayersCount}/2");
-                    _ = UserHandler(handler, users);
                     Console.WriteLine($"User connected {handler.RemoteEndPoint}");
+
 
                 }
                 else
@@ -77,9 +96,6 @@ namespace server
                 ArraySegment<byte> segment = new ArraySegment<byte>(buffer);
                 int received = await handler.ReceiveAsync(segment, SocketFlags.None);
                 var response = Encoding.UTF8.GetString(buffer, 0, received);
-                Console.WriteLine(response);
-
-               
 
 
                 if (response.StartsWith("Username:"))
@@ -116,14 +132,7 @@ namespace server
                         users.Count();
                     }
 
-                    dynamic messageReceived = JsonConvert.DeserializeObject(response);
-                    Console.WriteLine("Action of the user received" + messageReceived);
-
-                    if (messageReceived.Command == "sendingMessage")
-                    {
-                        Console.WriteLine($"A message was received {response.Substring(response.IndexOf("Message"))}");
-                    }
-
+                    
                 }
             }
 
