@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Configuration;
+using System.Diagnostics;
 using System.Linq;
 using System.Net;
 using System.Net.Sockets;
@@ -13,6 +14,78 @@ namespace server
 {
     internal class Server
     {
+        static async Task<Socket> UserHandler(Socket handler, Dictionary<string, object> users)
+        {
+            bool nicknameSet = false;
+            string nickName = string.Empty;
+            string message = string.Empty;
+
+            while (true)
+            {
+                byte[] buffer = new byte[1024];
+                ArraySegment<byte> segment = new ArraySegment<byte>(buffer);
+                int received = await handler.ReceiveAsync(segment, SocketFlags.None);
+                var response = Encoding.UTF8.GetString(buffer, 0, received);
+
+
+                if (response.StartsWith("Username:"))
+                {
+                    nickName = response.Substring(response.IndexOf(":") + 1);
+                    Console.WriteLine($"{nickName} has joined the server");
+                    nicknameSet = true;
+
+                    Console.WriteLine("Generating the sessionid");
+                    string sessionId = Guid.NewGuid().ToString();
+
+                    Console.WriteLine("Will create the object that handles the user");
+
+                    var user = new
+                    {
+                        AuthId = sessionId,
+                        nickname = nickName,
+                        socket = handler,
+                        connected = true,
+                    };
+
+                    Console.WriteLine("Inserting the user in the list");
+                    users.Add(sessionId, user);
+
+                    await SendMessage(user.socket, Convert.ToString(user.AuthId));
+
+                    Console.WriteLine("AuthID sended to the client");
+                }
+                else
+                {
+                    dynamic userData = JsonConvert.DeserializeObject<dynamic>(response);
+                    var SessionID = Convert.ToString(userData.AuthId);
+                    if (users.TryGetValue(SessionID, out dynamic userInfo))
+                    {
+                        switch (Convert.ToString(userData.Command))
+                        {
+                            case "sendingMessage":
+                                Console.WriteLine($"A message was received from {userData.Nickname} the message is {userData.Message} your session id is {userData.AuthId}");
+                                await SendMessage(userInfo.socket, "This message is being sended by the server");
+                                continue;
+                            case "testing":
+                                Console.WriteLine("The server received a test from the user");
+                                continue;
+                        }
+
+
+                    }
+                }
+            }
+
+
+        }
+        static async Task SendMessage(Socket socket, string message)
+        {
+            byte[] data = new byte[1024];
+            data = Encoding.UTF8.GetBytes(message);
+            ArraySegment<byte> bytes = new ArraySegment<byte>(data);
+            await socket.SendAsync(bytes, SocketFlags.None);
+        }
+
         static async Task Main(string[] args)
         {
             Dictionary<string, Object> users = new Dictionary<string, Object>();
@@ -41,109 +114,62 @@ namespace server
                 ips[a] = Dns.GetHostAddresses(hostName)[a];
             }
             Console.WriteLine($"The server is listening on this port : {ipEndPoint.Port}");
-            Console.WriteLine($"The server is listening on this host name : {hostName}");
 
             while (true)
             {
+            
+                Socket handler = await listener.AcceptAsync();
+                _ = UserHandler(handler, users);
 
-                var handler = await listener.AcceptAsync();
+                //Console.WriteLine(">");
+                //string command = Console.ReadLine();
+               
+            if (PlayersCount < 2)
+            {
+                PlayersCount++;
+
+                Console.WriteLine($"Connected players: {PlayersCount}/2");
+                Console.WriteLine($"User connected {handler.RemoteEndPoint}");
+
+            }
+            else
+            {
+                Console.WriteLine("The server is full");
+                handler.Close();
+            }
 
                 
-                    _ = UserHandler(handler, users);
-                byte[] data = new byte[1024];
-                ArraySegment<byte> bytes = new ArraySegment<byte>(data);
-                int bytesRec = await handler.ReceiveAsync(bytes, SocketFlags.None);
-                string messageReceived = Encoding.UTF8.GetString(data, 0, bytesRec);
-                   
-                if (messageReceived is object)
-                {
-                    dynamic userData = JsonConvert.DeserializeObject<dynamic>(messageReceived);
-                    if (userData.Command == "sendingMessage")
-                    {
-                        Console.WriteLine($"A message was received from {userData.Nickname} the message is {userData.Message}");
-                    }
-                    Console.WriteLine("object received");   
                 }
 
-                if (PlayersCount < 2)
-                {
-                    PlayersCount++;
-                    
-                    Console.WriteLine($"Connected players: {PlayersCount}/2");
-                    Console.WriteLine($"User connected {handler.RemoteEndPoint}");
+                //foreach (var user in users)
+                //{
+                //    var SessionId = user.Key;
+
+                //    string authid = Convert.ToString(userData.AuthId);
+                //    try
+                //    {
+                //    if (SessionId == Convert.ToString(userData.AuthId))
+                //    {
+                //        var ip = user.Key;
+                //            await SendMessage(user.Value.Socket, messageReceived);
+
+                //        }
+
+                //    }catch (Exception error)
+                //    {
+                //        Console.WriteLine(error);
+                //    }
+                //}
+
+                Console.WriteLine("In the end of the while");
+
+            //Console.WriteLine($"this is the user session {SessionID}");
 
 
-                }
-                else
-                {
-                    Console.WriteLine("The server is full");
-                    handler.Close();
-                }
 
 
-            }
-        }
-
-        static async Task<Socket> UserHandler(Socket handler, Dictionary<string, object> users)
-        {
-            bool nicknameSet = false;
-            string nickName = string.Empty;
-            string message = string.Empty;
-            byte[] buffer = new byte[1024];
-
-            while (true)
-            {
-                ArraySegment<byte> segment = new ArraySegment<byte>(buffer);
-                int received = await handler.ReceiveAsync(segment, SocketFlags.None);
-                var response = Encoding.UTF8.GetString(buffer, 0, received);
-
-
-                if (response.StartsWith("Username:"))
-                {
-                    nickName = response.Substring(response.IndexOf(":") + 1);
-                    Console.WriteLine($"{nickName} has joined the server");
-                    nicknameSet = true;
-
-                    Console.WriteLine("Generating the sessionid");
-                    string sessionId = Guid.NewGuid().ToString();
-
-                    Console.WriteLine("Will create the object that handles the user");
-
-                    var user = new
-                    {
-                        AuthId = sessionId,
-                        nickname = nickName,
-                        socket = handler,
-                        connected = true,
-                    };
-
-                    Console.WriteLine("Inserting the user in the list");
-                    users.Add(sessionId, user);
-
-                    string infoToUser = JsonConvert.SerializeObject(user.AuthId);
-                    Console.WriteLine("Object converted to string");
-
-                    await SendMessage(user.socket, infoToUser);
-                    Console.WriteLine("AuthID sended to the client");
-
-                    if (user.AuthId != "")
-                    {
-                        Console.WriteLine($"User: {user.AuthId}");
-                        users.Count();
-                    }
-
-                    
-                }
-            }
 
 
         }
-            static async Task SendMessage(Socket socket, string message)
-            {
-                byte[] data = new byte[1024];
-                data = Encoding.UTF8.GetBytes(message);
-                ArraySegment<byte> bytes = new ArraySegment<byte>(data);
-                await socket.SendAsync(bytes, SocketFlags.None);
-            }
+        }
     }
-}

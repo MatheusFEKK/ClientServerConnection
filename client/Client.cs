@@ -27,20 +27,23 @@ namespace client
             await client.ConnectAsync(ipEndPoint);
 
             return client;
-
-
         }
 
         static async Task SendMessage(Socket socket, string message)
         {
-            byte[] data = new byte[1024];
-            data = Encoding.UTF8.GetBytes(message);
-            ArraySegment<byte> bytes = new ArraySegment<byte>(data);
-            await socket.SendAsync(bytes, SocketFlags.None);
-
+            try
+            {
+                byte[] data = new byte[1024];
+                data = Encoding.UTF8.GetBytes(message);
+                ArraySegment<byte> bytes = new ArraySegment<byte>(data);
+                await socket.SendAsync(bytes, SocketFlags.None);
+            }catch(Exception error)
+            {
+                Console.WriteLine(error.ToString());
+            }
         }
 
-        static async Task<String> ReceiveUserData(Socket socket)
+        static async Task<String> ReceiveData(Socket socket)
         {
             byte[] data = new byte[1024];
             ArraySegment<byte> bytes = new ArraySegment<byte>(data);
@@ -50,38 +53,38 @@ namespace client
             return messageReceived;
         }
 
+
+
         static async Task Main(string[] args)
         {
             string nickname = "";
             string message;
-            Socket socket = null;
 
             Console.WriteLine("Insert the IP Address and the Port: ");
             var port = Console.ReadLine();
             var ipAddress = port.Substring(0, port.IndexOf(":"));
             var portInserted = Convert.ToUInt64(port.Substring(port.IndexOf(":") + 1));
-            socket = await ConnectToServer(ipAddress, portInserted);
+            Socket socket = await ConnectToServer(ipAddress, portInserted);
 
-            try
-            {
                 if (socket != null)
                 {
                     Console.WriteLine("Connected with the server");
 
                 }
 
+                if (nickname == "")
+                {
+                    Console.WriteLine("Insert your username: ");
+                    nickname = Console.ReadLine();
+                    string formatedNickname = $"Username: {nickname}";
+                    await SendMessage(socket, formatedNickname);
+                    Console.WriteLine("Username sended");
+                    sessionID = await ReceiveData(socket);
+                    Console.WriteLine($"Your session id is {sessionID}");
+                }
+                    Console.WriteLine("You can send messages to the server, type 'message' to send a message or 'disconnect' to disconnect from the server");
                 while (true)
                 {
-                    if (nickname == "")
-                    {
-                        Console.WriteLine("Insert your username: ");
-                        nickname = Console.ReadLine();
-                        string formatedNickname = $"Username: {nickname}";
-                        await SendMessage(socket, formatedNickname);
-                        Console.WriteLine("Username sended");
-                        sessionID = await ReceiveUserData(socket);
-                        Console.WriteLine($"Your session id is {sessionID}");
-                    }
                     var command = Console.ReadLine().ToLower();
 
                     if (command.ToString() == "disconnect")
@@ -110,6 +113,14 @@ namespace client
                             Console.WriteLine(payloadToServer);
                             Console.WriteLine("Message sended");
 
+                            string responseServer = await ReceiveData(socket);
+                            while (responseServer == "")
+                            {
+                                Console.WriteLine("Waiting a response from the server");
+
+                            }
+                            Console.WriteLine(responseServer);
+
                         }
                         catch (Exception ex)
                         {
@@ -118,12 +129,23 @@ namespace client
 
                     }
 
+                    if (command.ToString() == "testing" && nickname != "")
+                    {
+                        Console.WriteLine("Test will be sended");
+                        var payload = new
+                        {
+                            Nickname = nickname,
+                            AuthId = sessionID,
+                            Message = "this is a test",
+                            Command = "testing",
+                        };
+                        string payloadToServer = JsonConvert.SerializeObject(payload);
+                        await SendMessage(socket, payloadToServer);
+                        Console.WriteLine(payloadToServer);
+                        Console.WriteLine("Test sended");
+                    }
+
                 }
             }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"{ex.Message}");
-            }
         }
-    }
-}
+} 
