@@ -121,10 +121,11 @@ namespace server
                 Socket handler = await listener.AcceptAsync();
                 _ = UserHandler(handler, users);
 
-                //Console.WriteLine(">");
-                //string command = Console.ReadLine();
-               
-            if (PlayersCount < 2)
+                Console.WriteLine(">");
+                string command = Console.ReadLine();
+                
+
+                if (PlayersCount < 2)
             {
                 PlayersCount++;
 

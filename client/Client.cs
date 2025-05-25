@@ -6,12 +6,26 @@ using System.Net.Sockets;
 using System.Text;
 using System.Threading.Tasks;
 using Newtonsoft.Json;
+using System.Windows.Forms;
+using GameUI;
+
 
 namespace client
 {
     internal class Client
     {
         private static string sessionID;
+        private new Form ActiveUI;
+
+        private void openUI(Form instance)
+        {
+            if (ActiveUI != null)
+            {
+                ActiveUI.Close();
+            }
+            ActiveUI = instance;
+            instance.Show();
+        }
 
         static async Task<Socket> ConnectToServer(string ip, ulong port)
         {
@@ -27,6 +41,8 @@ namespace client
             await client.ConnectAsync(ipEndPoint);
 
             return client;
+
+            
         }
 
         static async Task SendMessage(Socket socket, string message)
@@ -55,8 +71,13 @@ namespace client
 
 
 
+
+        [STAThread]
         static async Task Main(string[] args)
         {
+            Application.EnableVisualStyles();
+            Application.SetCompatibleTextRenderingDefault(false);
+
             string nickname = "";
             string message;
 
@@ -81,7 +102,15 @@ namespace client
                     Console.WriteLine("Username sended");
                     sessionID = await ReceiveData(socket);
                     Console.WriteLine($"Your session id is {sessionID}");
+                    Console.WriteLine("Opening the UI...");
                 }
+
+                //Form1.Nickname = nickname;
+                //Form1.SessionID = sessionID;
+                //Form1.Handler = socket;
+                //Form1 form = new Form1();
+                //Application.Run(form);
+
                     Console.WriteLine("You can send messages to the server, type 'message' to send a message or 'disconnect' to disconnect from the server");
                 while (true)
                 {

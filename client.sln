@@ -1,11 +1,16 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
-VisualStudioVersion = 17.13.35931.197 d17.13
+VisualStudioVersion = 17.13.35931.197
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "client", "client\client.csproj", "{9763CB59-4E88-4DF1-9D80-75AEC4B017B6}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "server", "server\server.csproj", "{73E3070B-4695-4003-9F28-738C9A73E6EE}"
+	ProjectSection(ProjectDependencies) = postProject
+		{9763CB59-4E88-4DF1-9D80-75AEC4B017B6} = {9763CB59-4E88-4DF1-9D80-75AEC4B017B6}
+	EndProjectSection
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GameUI", "GameUI\GameUI.csproj", "{41698261-5BDC-4B98-B550-B9DFB87F7D76}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -21,6 +26,10 @@ Global
 		{73E3070B-4695-4003-9F28-738C9A73E6EE}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{73E3070B-4695-4003-9F28-738C9A73E6EE}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{73E3070B-4695-4003-9F28-738C9A73E6EE}.Release|Any CPU.Build.0 = Release|Any CPU
+		{41698261-5BDC-4B98-B550-B9DFB87F7D76}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{41698261-5BDC-4B98-B550-B9DFB87F7D76}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{41698261-5BDC-4B98-B550-B9DFB87F7D76}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{41698261-5BDC-4B98-B550-B9DFB87F7D76}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
