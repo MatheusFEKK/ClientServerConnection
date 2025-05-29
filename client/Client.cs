@@ -5,9 +5,10 @@ using System.Net;
 using System.Net.Sockets;
 using System.Text;
 using System.Threading.Tasks;
-using Newtonsoft.Json;
 using System.Windows.Forms;
 using GameUI;
+using System.Text.Json.Serialization;
+using System.Text.Json;
 
 
 namespace client
@@ -109,21 +110,22 @@ namespace client
                 while (true)
                 {
                     var command = Console.ReadLine().ToLower();
-                    string server = await ReceiveData(socket);
-                    if (server == "StartGame")
-                    {
-                        Form1.Nickname = nickname;
-                        Form1.SessionID = sessionID;
-                        Form1.Handler = socket;
-                        Form1 form = new Form1();
-                        Application.Run(form);
-                    }
+                //    string server = await ReceiveData(socket);
+                //    if (server == "StartGame")
+                //    {
+                //        Form1.Nickname = nickname;
+                //        Form1.SessionID = sessionID;
+                //        Form1.Handler = socket;
+                //        Form1 form = new Form1();
+                //        Application.Run(form);
+                //}
+                //else { }
                 if (command.ToString() == "disconnect")
-                    {
+                {
 
-                        Console.WriteLine("Disconnecting from the server...");
-                        break;
-                    }
+                    Console.WriteLine("Disconnecting from the server...");
+                    break;
+                }
                     if (command.ToString() == "message" && nickname != "")
                     {
                         Console.WriteLine("Write your message to the server");
@@ -138,7 +140,7 @@ namespace client
                                 Command = "sendingMessage",
                             };
 
-                            string payloadToServer = JsonConvert.SerializeObject(payload);
+                            string payloadToServer = JsonSerializer.Serialize(payload);
                             Console.WriteLine("Payload created");
                             await SendMessage(socket, payloadToServer);
                             Console.WriteLine(payloadToServer);
@@ -174,7 +176,7 @@ namespace client
                             Message = "this is a test",
                             Command = "testing",
                         };
-                        string payloadToServer = JsonConvert.SerializeObject(payload);
+                        string payloadToServer = JsonSerializer.Serialize(payload);
                         await SendMessage(socket, payloadToServer);
                         Console.WriteLine(payloadToServer);
                         Console.WriteLine("Test sended");

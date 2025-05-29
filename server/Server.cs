@@ -6,9 +6,8 @@ using System.Linq;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
+using System.Text.Json;
 using System.Threading.Tasks;
-using System.Xml.Schema;
-using Newtonsoft.Json;
 
 namespace server
 {
@@ -56,14 +55,15 @@ namespace server
                 }
                 else
                 {
-                    dynamic userData = JsonConvert.DeserializeObject<dynamic>(response);
-                    var SessionID = Convert.ToString(userData.AuthId);
+                    JsonElement userData = JsonSerializer.Deserialize<JsonElement>(response);
+                    Console.WriteLine(userData);
+                    var SessionID = Convert.ToString(userData.GetProperty("AuthId"));
                     if (users.TryGetValue(SessionID, out dynamic userInfo))
                     {
-                        switch (Convert.ToString(userData.Command))
+                        switch (Convert.ToString(userData.GetProperty("Command")))
                         {
                             case "sendingMessage":
-                                Console.WriteLine($"A message was received from {userData.Nickname} the message is {userData.Message} your session id is {userData.AuthId}");
+                                Console.WriteLine($"A message was received from {userData.GetProperty("Nickname")} the message is {userData.GetProperty("Message")} your session id is {userData["AuthId"]}");
                                 await SendMessage(userInfo.socket, "This message is being sended by the server");
                                 continue;
                             case "testing":
@@ -73,10 +73,10 @@ namespace server
 
 
                     }
+
                 }
+
             }
-
-
         }
         static async Task SendMessage(Socket socket, string message)
         {
