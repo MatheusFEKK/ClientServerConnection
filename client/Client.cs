@@ -105,18 +105,20 @@ namespace client
                     Console.WriteLine("Opening the UI...");
                 }
 
-                //Form1.Nickname = nickname;
-                //Form1.SessionID = sessionID;
-                //Form1.Handler = socket;
-                //Form1 form = new Form1();
-                //Application.Run(form);
-
-                    Console.WriteLine("You can send messages to the server, type 'message' to send a message or 'disconnect' to disconnect from the server");
+            Console.WriteLine("You can send messages to the server, type 'message' to send a message or 'disconnect' to disconnect from the server");
                 while (true)
                 {
                     var command = Console.ReadLine().ToLower();
-
-                    if (command.ToString() == "disconnect")
+                    string server = await ReceiveData(socket);
+                    if (server == "StartGame")
+                    {
+                        Form1.Nickname = nickname;
+                        Form1.SessionID = sessionID;
+                        Form1.Handler = socket;
+                        Form1 form = new Form1();
+                        Application.Run(form);
+                    }
+                if (command.ToString() == "disconnect")
                     {
 
                         Console.WriteLine("Disconnecting from the server...");
@@ -148,6 +150,8 @@ namespace client
                                 Console.WriteLine("Waiting a response from the server");
 
                             }
+
+                        
                             Console.WriteLine(responseServer);
 
                         }
@@ -157,6 +161,8 @@ namespace client
                         }
 
                     }
+
+
 
                     if (command.ToString() == "testing" && nickname != "")
                     {

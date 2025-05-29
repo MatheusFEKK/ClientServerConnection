@@ -125,14 +125,23 @@ namespace server
                 string command = Console.ReadLine();
                 
 
-                if (PlayersCount < 2)
+                if (PlayersCount == 2)
             {
                 PlayersCount++;
 
                 Console.WriteLine($"Connected players: {PlayersCount}/2");
                 Console.WriteLine($"User connected {handler.RemoteEndPoint}");
+                   foreach (var userInfo in users.Values)
+                    {
+                        dynamic user = userInfo;
+                        if (user.connected)
+                        {
+                            await SendMessage(user.socket, "StartGame");
+                            Console.WriteLine($"Sent start game command to {user.nickname} with session id {user.AuthId}");
+                        }
+                    }
 
-            }
+                }
             else
             {
                 Console.WriteLine("The server is full");
