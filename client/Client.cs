@@ -103,25 +103,28 @@ namespace client
                     Console.WriteLine("Username sended");
                     sessionID = await ReceiveData(socket);
                     Console.WriteLine($"Your session id is {sessionID}");
-                    Console.WriteLine("Opening the UI...");
                 }
 
             Console.WriteLine("You can send messages to the server, type 'message' to send a message or 'disconnect' to disconnect from the server");
                 while (true)
                 {
-                    var command = Console.ReadLine().ToLower();
-                    string server = await ReceiveData(socket);
-
-                if (server == "StartGame")
+                string server = await ReceiveData(socket);
+                    if (server != null)
                 {
-                    Console.WriteLine("Initializing the form...");
-                    Form1.Nickname = nickname;
-                    Form1.SessionID = sessionID;
-                    Form1.Handler = socket;
-                    Form1 form = new Form1();
-                    Application.Run(form);
+                    if (server == "StartGame")
+                    {
+                        Console.WriteLine("Initializing the form...");
+                        Form1.Nickname = nickname;
+                        Form1.SessionID = sessionID;
+                        Form1.Handler = socket;
+                        Form1 form = new Form1();
+                        Application.Run(form);
+                    }
                 }
-              
+
+                var command = Console.ReadLine().ToLower();
+                
+
                 if (command.ToString() == "disconnect")
                 {
 
@@ -166,9 +169,10 @@ namespace client
 
                     }
 
+                
 
 
-                    if (command.ToString() == "testing" && nickname != "")
+                if (command.ToString() == "testing" && nickname != "")
                     {
                         Console.WriteLine("Test will be sended");
                         var payload = new

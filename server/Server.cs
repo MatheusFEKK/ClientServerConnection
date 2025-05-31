@@ -33,7 +33,6 @@ namespace server
                     nickName = response.Substring(response.IndexOf(":") + 1);
                     Console.WriteLine($"{nickName} has joined the server");
                     nicknameSet = true;
-                    PlayersCount++;
 
                     Console.WriteLine("Generating the sessionid");
                     string sessionId = Guid.NewGuid().ToString();
@@ -52,6 +51,7 @@ namespace server
                     users.Add(sessionId, user);
 
                     await SendMessage(user.socket, Convert.ToString(user.AuthId));
+                    PlayersCount++;
 
                     Console.WriteLine("AuthID sended to the client");
                 }
