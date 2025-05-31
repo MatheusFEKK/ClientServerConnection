@@ -131,12 +131,16 @@ namespace server
                 {
                     Console.WriteLine($"Connected players: {PlayersCount}/2");
                     Console.WriteLine($"User connected {handler.RemoteEndPoint}");
-                   foreach (var userInfo in users.Values)
+                    if (PlayersCount == 2)
                     {
-                        dynamic user = userInfo;
+                        Console.WriteLine("The server is full, starting the game now");
+                       foreach (var userInfo in users.Values)
+                        {
+                            dynamic user = userInfo;
                         
-                        await SendMessage(user.socket, "StartGame");
-                        Console.WriteLine($"Sent start game command to {user.nickname} with session id {user.AuthId}");
+                            await SendMessage(user.socket, "StartGame");
+                            Console.WriteLine($"Sent start game command to {user.nickname} with session id {user.AuthId}");
+                        }
                     }
 
                    //if (PlayersCount == 2)
