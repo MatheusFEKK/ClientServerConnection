@@ -63,7 +63,7 @@ namespace server
                         switch (Convert.ToString(userData.GetProperty("Command")))
                         {
                             case "sendingMessage":
-                                Console.WriteLine($"A message was received from {userData.GetProperty("Nickname")} the message is {userData.GetProperty("Message")} your session id is {userData["AuthId"]}");
+                                Console.WriteLine($"A message was received from {userData.GetProperty("Nickname")} the message is {userData.GetProperty("Message")} your session id is {userData.GetProperty("AuthId")}");
                                 await SendMessage(userInfo.socket, "This message is being sended by the server");
                                 continue;
                             case "testing":
