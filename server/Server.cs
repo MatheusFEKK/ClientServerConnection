@@ -13,6 +13,7 @@ namespace server
 {
     internal class Server
     {
+        static int PlayersCount = 1;
         static async Task<Socket> UserHandler(Socket handler, Dictionary<string, object> users)
         {
             bool nicknameSet = false;
@@ -32,6 +33,7 @@ namespace server
                     nickName = response.Substring(response.IndexOf(":") + 1);
                     Console.WriteLine($"{nickName} has joined the server");
                     nicknameSet = true;
+                    PlayersCount++;
 
                     Console.WriteLine("Generating the sessionid");
                     string sessionId = Guid.NewGuid().ToString();
@@ -89,7 +91,7 @@ namespace server
         static async Task Main(string[] args)
         {
             Dictionary<string, Object> users = new Dictionary<string, Object>();
-            int PlayersCount = 0;
+            
 
             string hostName = Dns.GetHostName();
             IPAddress localIpAddress = IPAddress.Any;
@@ -121,32 +123,31 @@ namespace server
                 Socket handler = await listener.AcceptAsync();
                 _ = UserHandler(handler, users);
 
-                Console.WriteLine(">");
-                string command = Console.ReadLine();
+                Console.WriteLine(PlayersCount);
+                //string command = Console.ReadLine();
                 
 
-                if (PlayersCount == 2)
-            {
-                PlayersCount++;
-
-                Console.WriteLine($"Connected players: {PlayersCount}/2");
-                Console.WriteLine($"User connected {handler.RemoteEndPoint}");
+                if (PlayersCount <= 2)
+                {
+                    Console.WriteLine($"Connected players: {PlayersCount}/2");
+                    Console.WriteLine($"User connected {handler.RemoteEndPoint}");
                    foreach (var userInfo in users.Values)
                     {
                         dynamic user = userInfo;
-                        if (user.connected)
-                        {
-                            await SendMessage(user.socket, "StartGame");
-                            Console.WriteLine($"Sent start game command to {user.nickname} with session id {user.AuthId}");
-                        }
+                        
+                        await SendMessage(user.socket, "StartGame");
+                        Console.WriteLine($"Sent start game command to {user.nickname} with session id {user.AuthId}");
                     }
 
+                   //if (PlayersCount == 2)
+                   //{
+                   //     Console.WriteLine("The server is full");
+                   //     handler.Close();
+                   //}
+
                 }
-            else
-            {
-                Console.WriteLine("The server is full");
-                handler.Close();
-            }
+            
+            
 
                 
                 }

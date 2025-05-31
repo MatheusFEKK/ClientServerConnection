@@ -110,16 +110,18 @@ namespace client
                 while (true)
                 {
                     var command = Console.ReadLine().ToLower();
-                //    string server = await ReceiveData(socket);
-                //    if (server == "StartGame")
-                //    {
-                //        Form1.Nickname = nickname;
-                //        Form1.SessionID = sessionID;
-                //        Form1.Handler = socket;
-                //        Form1 form = new Form1();
-                //        Application.Run(form);
-                //}
-                //else { }
+                    string server = await ReceiveData(socket);
+
+                if (server == "StartGame")
+                {
+                    Console.WriteLine("Initializing the form...");
+                    Form1.Nickname = nickname;
+                    Form1.SessionID = sessionID;
+                    Form1.Handler = socket;
+                    Form1 form = new Form1();
+                    Application.Run(form);
+                }
+              
                 if (command.ToString() == "disconnect")
                 {
 
