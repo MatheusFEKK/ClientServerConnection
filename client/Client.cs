@@ -114,7 +114,7 @@ namespace client
                     if (server == "StartGame")
                     {
                         Console.WriteLine("Initializing the form...");
-                        Form1.Nickname = nickname;
+                        Form1.Nickname01 = nickname;
                         Form1.SessionID = sessionID;
                         Form1.Handler = socket;
                         Form1 form = new Form1();

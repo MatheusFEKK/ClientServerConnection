@@ -13,13 +13,20 @@ namespace GameUI
 {
     public partial class Form1 : Form
     {  
-       private static string NicknameFromUser;
+       private static string NicknameFromUser01;
+       private static string NicknameFromUser02;
        private static string SessionIDFromUser;
        private static Socket handler;
-       public static string Nickname
+       public static string Nickname01
+       {
+            get { return NicknameFromUser01; }
+            set { NicknameFromUser01 = value; }
+       }
+
+        public static string Nickname02
         {
-            get { return NicknameFromUser; }
-            set { NicknameFromUser = value; }
+            get { return NicknameFromUser02; }
+            set { NicknameFromUser02 = value; }
         }
 
         public static string SessionID   
