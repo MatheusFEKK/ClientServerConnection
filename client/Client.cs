@@ -39,9 +39,16 @@ namespace client
                     ProtocolType.Tcp
                     );
 
-            await client.ConnectAsync(ipEndPoint);
+            try
+            {
+                await client.ConnectAsync(ipEndPoint);
+                return client;
+            }catch (SocketException error)
+            {
+                return null;
+            }
 
-            return client;
+
 
             
         }
@@ -79,6 +86,7 @@ namespace client
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
 
+            
             string nickname = "";
             string message;
 
@@ -88,11 +96,20 @@ namespace client
             var portInserted = Convert.ToUInt64(port.Substring(port.IndexOf(":") + 1));
             Socket socket = await ConnectToServer(ipAddress, portInserted);
 
-                if (socket != null)
-                {
-                    Console.WriteLine("Connected with the server");
+            if (socket != null)
+            {
+                Console.WriteLine("Connected successfully");
+            }
+            else
+            {
+                Console.WriteLine("Connection failed, please check the IP and Port and try again. \nPress any key to close...");
+                
+                return;
+            }
 
-                }
+
+                while (true)
+                {
 
                 if (nickname == "")
                 {
@@ -103,24 +120,9 @@ namespace client
                     Console.WriteLine("Username sended");
                     sessionID = await ReceiveData(socket);
                     Console.WriteLine($"Your session id is {sessionID}");
+                    Console.WriteLine("You can send messages to the server, type 'message' to send a message or 'disconnect' to disconnect from the server");
                 }
 
-            Console.WriteLine("You can send messages to the server, type 'message' to send a message or 'disconnect' to disconnect from the server");
-                while (true)
-                {
-                string server = await ReceiveData(socket);
-                    if (server != null)
-                {
-                    if (server == "StartGame")
-                    {
-                        Console.WriteLine("Initializing the form...");
-                        Form1.Nickname01 = nickname;
-                        Form1.SessionID = sessionID;
-                        Form1.Handler = socket;
-                        Form1 form = new Form1();
-                        Application.Run(form);
-                    }
-                }
 
                 var command = Console.ReadLine().ToLower();
                 
@@ -151,15 +153,15 @@ namespace client
                             Console.WriteLine(payloadToServer);
                             Console.WriteLine("Message sended");
 
-                            string responseServer = await ReceiveData(socket);
-                            while (responseServer == "")
+
+                        string server = await ReceiveData(socket);
+
+                            while (server == "")
                             {
                                 Console.WriteLine("Waiting a response from the server");
 
                             }
 
-                        
-                            Console.WriteLine(responseServer);
 
                         }
                         catch (Exception ex)

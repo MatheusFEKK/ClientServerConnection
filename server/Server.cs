@@ -49,9 +49,13 @@ namespace server
                     Console.WriteLine("Inserting the user in the list");
 
                     await SendMessage(user.socket, Convert.ToString(user.AuthId));
-                    users.Add(sessionId, user);
 
                     Console.WriteLine("AuthID sended to the client");
+
+                    if (nicknameSet == true)
+                    {
+                        users.Add(sessionId, user);
+                    }
                 }
                 else
                 {
@@ -74,6 +78,25 @@ namespace server
 
                 }
 
+                if (users.Count == 2)
+                {
+                    Console.WriteLine("The server is full, starting the game now");
+                    foreach (var userInfo in users.Values)
+                    {
+                        dynamic user = userInfo;
+
+                        await SendMessage(user.socket, "StartGame");
+                        Console.WriteLine($"Sent start game command to {user.nickname} with session id {user.AuthId}");
+                    }
+
+                    //if (PlayersCount == 2)
+                    //{
+                    //     Console.WriteLine("The server is full");
+                    //     handler.Close();
+                    //}
+
+                }
+
             }
         }
         static async Task SendMessage(Socket socket, string message)
@@ -87,7 +110,7 @@ namespace server
         static async Task Main(string[] args)
         {
             Dictionary<string, Object> users = new Dictionary<string, Object>();
-            
+
 
             string hostName = Dns.GetHostName();
             IPAddress localIpAddress = IPAddress.Any;
@@ -115,76 +138,44 @@ namespace server
 
             while (true)
             {
-            
+
                 Socket handler = await listener.AcceptAsync();
                 _ = UserHandler(handler, users);
-                //string command = Console.ReadLine();
+                string command = Console.ReadLine();
 
+            }
 
-                //if (users.Count + 1 < 3)
-                //{
-                //    Console.WriteLine($"Connected players: {users.Count + 1}/2");
-                //    Console.WriteLine($"User connected {handler.RemoteEndPoint}");
-                //    foreach (var userInf in users.Values)
-                //    {
-                //        dynamic user = userInf;
-                //        Console.WriteLine($"{user.nickname}");
-                //    }
-                //    }
-                Console.WriteLine($"Users count {users.Count + 1}");
-                    if (users.Count + 1 == 2)
-                    {
-                        Console.WriteLine("The server is full, starting the game now");
-                       foreach (var userInfo in users.Values)
-                        {
-                            dynamic user = userInfo;
-                        
-                            await SendMessage(user.socket, "StartGame");
-                            Console.WriteLine($"Sent start game command to {user.nickname} with session id {user.AuthId}");
-                        }
+            //foreach (var user in users)
+            //{
+            //    var SessionId = user.Key;
 
-                   //if (PlayersCount == 2)
-                   //{
-                   //     Console.WriteLine("The server is full");
-                   //     handler.Close();
-                   //}
+            //    string authid = Convert.ToString(userData.AuthId);
+            //    try
+            //    {
+            //    if (SessionId == Convert.ToString(userData.AuthId))
+            //    {
+            //        var ip = user.Key;
+            //            await SendMessage(user.Value.Socket, messageReceived);
 
-                }
-            
-            
+            //        }
 
-                
-                }
+            //    }catch (Exception error)
+            //    {
+            //        Console.WriteLine(error);
+            //    }
+            //}
 
-                //foreach (var user in users)
-                //{
-                //    var SessionId = user.Key;
+            Console.WriteLine("In the end of the while");
 
-                //    string authid = Convert.ToString(userData.AuthId);
-                //    try
-                //    {
-                //    if (SessionId == Convert.ToString(userData.AuthId))
-                //    {
-                //        var ip = user.Key;
-                //            await SendMessage(user.Value.Socket, messageReceived);
-
-                //        }
-
-                //    }catch (Exception error)
-                //    {
-                //        Console.WriteLine(error);
-                //    }
-                //}
-
-                Console.WriteLine("In the end of the while");
-
-            //Console.WriteLine($"this is the user session {SessionID}");
+                //Console.WriteLine($"this is the user session {SessionID}");
 
 
 
 
 
 
-        }
+            }
         }
     }
+
+
