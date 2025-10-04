@@ -9,6 +9,7 @@ using System.Windows.Forms;
 using GameUI;
 using System.Text.Json.Serialization;
 using System.Text.Json;
+using System.Runtime.InteropServices;
 
 
 namespace client
@@ -77,9 +78,6 @@ namespace client
             return messageReceived;
         }
 
-
-
-
         [STAThread]
         static async Task Main(string[] args)
         {
@@ -111,17 +109,23 @@ namespace client
                 while (true)
                 {
 
-                if (nickname == "")
-                {
-                    Console.WriteLine("Insert your username: ");
-                    nickname = Console.ReadLine();
-                    string formatedNickname = $"Username: {nickname}";
-                    await SendMessage(socket, formatedNickname);
-                    Console.WriteLine("Username sended");
-                    sessionID = await ReceiveData(socket);
-                    Console.WriteLine($"Your session id is {sessionID}");
-                    Console.WriteLine("You can send messages to the server, type 'message' to send a message or 'disconnect' to disconnect from the server");
-                }
+                    if (nickname == "" && socket != null)
+                    {
+                        Console.WriteLine("Insert your username: ");
+                        nickname = Console.ReadLine();
+                        var payload = new
+                        {
+                            Nickname = nickname,
+                            Command = "setNickname",
+                        };
+                        string payloadToServer = JsonSerializer.Serialize(payload);
+                        await SendMessage(socket, payloadToServer);
+                        Console.WriteLine("Username sended");
+                        string response = await ReceiveData(socket);
+                        JsonElement serverResponse = JsonSerializer.Deserialize<JsonElement>(response);
+                        Console.WriteLine($"Your session id is {sessionID}");
+                        Console.WriteLine("You can send messages to the server, type 'message' to send a message or 'disconnect' to disconnect from the server");
+                    }
 
 
                 var command = Console.ReadLine().ToLower();
