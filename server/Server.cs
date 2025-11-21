@@ -5,6 +5,7 @@ using System.Diagnostics;
 using System.Linq;
 using System.Net;
 using System.Net.Sockets;
+using System.Runtime.Remoting.Metadata.W3cXsd2001;
 using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
@@ -13,7 +14,9 @@ namespace server
 {
     internal class Server
     {
-        static async Task<Socket> UserHandler(Socket handler, Dictionary<string, object> users)
+           public static List<ServerList> connectedClients = new List<ServerList>();
+        
+        static async Task<Socket> UserHandler(Socket handler)
         {
             bool nicknameSet = false;
             string nickName = string.Empty;
@@ -26,77 +29,61 @@ namespace server
                 int received = await handler.ReceiveAsync(segment, SocketFlags.None);
                 var response = Encoding.UTF8.GetString(buffer, 0, received);
 
-               
-                    JsonElement userData = JsonSerializer.Deserialize<JsonElement>(response);
-                    Console.WriteLine(userData);
-                   
-                    if (nicknameSet == false)
+
+                JsonElement userData = JsonSerializer.Deserialize<JsonElement>(response);
+                Console.WriteLine(userData);
+
+                if (nicknameSet == false)
                 {
-                        switch (Convert.ToString(userData.GetProperty("Command")))
-                        {
-                            case "setNickname":
-                                Console.WriteLine($"{userData.GetProperty("Nickname")} has joined the server");
+                    switch (Convert.ToString(userData.GetProperty("Command")))
+                    {
+                        case "setNickname":
+                            Console.WriteLine($"{userData.GetProperty("Nickname")} has joined the server");
 
-                                Console.WriteLine("Generating the sessionid");
-                                string sessionId = Guid.NewGuid().ToString();
+                            Console.WriteLine("Generating the sessionid");
+                            string sessionId = Guid.NewGuid().ToString();
 
-                                Console.WriteLine("Will create the object that handles the user");
+                            Console.WriteLine("Will create the object that handles the user");
 
-                                var user = new
-                                {
-                                    AuthId = sessionId,
-                                    nickname = userData.GetProperty("Nickname"),
-                                    socket = handler,
-                                    connected = true,
-                                };
+                            var user = new
+                            {
+                                AuthId = sessionId,
+                                nickname = userData.GetProperty("Nickname"),
+                                connected = true,
+                            };
                             string payloadToClient = JsonSerializer.Serialize(user);
-                            nicknameSet = true;
                             Console.WriteLine($"The user {user.nickname} has the session id {user.AuthId} the Nickname is {userData.GetProperty("Nickname")}");
                             Console.WriteLine("Inserting the user in the list");
                             Console.WriteLine("AuthID sended to the client");
-                                await SendMessage(user.socket, payloadToClient);
-
-
-                                users.Add(sessionId, user);
+                            await SendMessage(handler, payloadToClient);
+                            var newClient = new ServerList(sessionId, userData.GetProperty("Nickname").ToString(), handler);
+                            Console.WriteLine($"Connected players {connectedClients.Count + 1}/2");
+                            nicknameSet = true;
                             break;
-                        
-                        }
+                        case "sendingMessage":
+                            foreach (var client in connectedClients)
+                            {
+                                Console.WriteLine(client.AuthID.Contains(userData.GetProperty("AuthId").ToString()));
+                            }
+                            Console.WriteLine($"The message sended by the user is {userData.GetProperty("Message")}");
+                            break;
+
+                    }
                 }
 
-            //    var SessionID = Convert.ToString(userData.GetProperty("AuthId"));
-            //    if (users.TryGetValue(SessionID, out dynamic userInfo))
-            //{
-            //        switch (Convert.ToString(userData.GetProperty("Command")))
-            //        {
-            //            case "sendingMessage":
-            //                Console.WriteLine($"A message was received from {userData.GetProperty("Nickname")} the message is {userData.GetProperty("Message")} your session id is {userData.GetProperty("AuthId")}");
-            //                await SendMessage(userInfo.socket, "This message is being sended by the server");
-            //                break;
-            //            case "testing":
-            //                Console.WriteLine("The server received a test from the user");
-            //                break;
-            //        }
-            //}
 
+                if (connectedClients.Count == 2)
+                {
+                    Console.WriteLine("The server is full, starting the game now");
+                    foreach (var userInfo in connectedClients)
+                    {
+                        dynamic user = userInfo;
 
-                //if (users.Count == 2)
-                //{
-                //    Console.WriteLine("The server is full, starting the game now");
-                //    foreach (var userInfo in users.Values)
-                //    {
-                //        dynamic user = userInfo;
+                        await SendMessage(user.socket, "StartGame");
+                        Console.WriteLine($"Sent start game command to {user.nickname} with session id {user.AuthId}");
+                    }
 
-                //        await SendMessage(user.socket, "StartGame");
-                //        Console.WriteLine($"Sent start game command to {user.nickname} with session id {user.AuthId}");
-                //    }
-
-                //    if (PlayersCount == 2)
-                //    {
-                //        Console.WriteLine("The server is full");
-                //        handler.Close();
-                //    }
-
-                //}
+                }
 
             }
         }
@@ -141,11 +128,10 @@ namespace server
             {
 
                 Socket handler = await listener.AcceptAsync();
-                _ = UserHandler(handler, users);
-                //string command = Console.ReadLine();
+                _ = UserHandler(handler);
+                
 
             }
-
             //foreach (var user in users)
             //{
             //    var SessionId = user.Key;

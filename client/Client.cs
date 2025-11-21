@@ -113,6 +113,8 @@ namespace client
                     {
                         Console.WriteLine("Insert your username: ");
                         nickname = Console.ReadLine();
+                    if (nickname != "")
+                    {
                         var payload = new
                         {
                             Nickname = nickname,
@@ -123,8 +125,14 @@ namespace client
                         Console.WriteLine("Username sended");
                         string response = await ReceiveData(socket);
                         JsonElement serverResponse = JsonSerializer.Deserialize<JsonElement>(response);
+                        sessionID = serverResponse.GetProperty("AuthId").ToString();
                         Console.WriteLine($"Your session id is {sessionID}");
                         Console.WriteLine("You can send messages to the server, type 'message' to send a message or 'disconnect' to disconnect from the server");
+                    }
+                    else
+                    {
+                        Console.WriteLine("The nickname can't be empty");
+                    }
                     }
 
 
@@ -158,15 +166,6 @@ namespace client
                             Console.WriteLine("Message sended");
 
 
-                        string server = await ReceiveData(socket);
-
-                            while (server == "")
-                            {
-                                Console.WriteLine("Waiting a response from the server");
-
-                            }
-
-
                         }
                         catch (Exception ex)
                         {
@@ -174,8 +173,6 @@ namespace client
                         }
 
                     }
-
-                
 
 
                 if (command.ToString() == "testing" && nickname != "")
